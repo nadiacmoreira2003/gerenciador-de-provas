@@ -408,7 +408,7 @@
 <div class="login-overlay" id="loginOverlay">
     <div class="login-box">
         <h2>Sistema de Gerenciamento</h2>
-        <p class="subtitle">Provas e Disciplinas — Coordenação</p>
+        <p class="subtitle">Provas — Coordenação</p>
 
         <!-- Login Form -->
         <div id="loginForm">
@@ -454,7 +454,7 @@
 <header>
     <div class="header-content">
         <div>
-            <h1>Sistema de Gerenciamento de Provas e Disciplinas</h1>
+            <h1>Sistema de Gerenciamento de Provas</h1>
             <p>Painel da Coordenação</p>
         </div>
         <div class="user-info">
@@ -1078,7 +1078,7 @@ function adminCriarUsuario() {
     ultimoUsuarioCriado = { nome, email };
 
     // Gerar texto para enviar por e-mail
-    const texto = `Olá ${nome},\n\nSua conta foi criada no Sistema de Gerenciamento de Provas e Disciplinas.\n\nDados de acesso:\nE-mail: ${email}\nSenha temporária: 12345\n\nAcesse: ${SYSTEM_URL}\n\nNo primeiro acesso você deverá:\n1. Fazer login com a senha temporária (12345)\n2. Criar uma senha pessoal\n\nAtenciosamente,\nCoordenação`;
+    const texto = `Olá ${nome},\n\nSua conta foi criada no Sistema de Gerenciamento de Provas.\n\nDados de acesso:\nE-mail: ${email}\nSenha temporária: 12345\n\nAcesse: ${SYSTEM_URL}\n\nNo primeiro acesso você deverá:\n1. Fazer login com a senha temporária (12345)\n2. Criar uma senha pessoal\n\nAtenciosamente,\nCoordenação`;
 
     document.getElementById('adminTextoEmail').value = texto;
     document.getElementById('adminTextoCredenciais').style.display = 'block';
