@@ -1407,7 +1407,7 @@ function gerarEventos(disc) {
 
         eventos.push({
             key: `${id}_prova_verif_${i}`, dataEmail: dataVerificacao, prazo: dataVerificacao,
-            tipo: 'verificacao_envio', titulo: `Verificar Envio da Prova: ${prova.nome}`,
+            tipo: 'verificacao_envio', titulo: `Verificar Envio da ${prova.nome}`,
             descricao: `Confirmar se ${disc.nomeProfessor} enviou a ${prova.nome} (prazo era ${formatDate(prazoElab)}). Se não recebeu, enviar cobrança urgente.`,
             disc: disc, prova: prova, provaIndex: i,
         });
