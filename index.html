@@ -217,6 +217,12 @@
         .prof-card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 10px; border-left: 4px solid #1a237e; }
         .prof-card h3 { color: #1a237e; font-size: 1rem; margin-bottom: 8px; }
         .prof-data-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f5f5f5; border-radius: 6px; margin-top: 6px; font-size: 0.85rem; }
+        /* Dependência */
+        .dep-disc-entry { display: flex; gap: 10px; align-items: end; margin-bottom: 8px; background: #e8f5e9; padding: 10px; border-radius: 8px; flex-wrap: wrap; }
+        .dep-disc-entry .form-group { flex: 1; min-width: 150px; margin-bottom: 0; }
+        .dep-card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 10px; border-left: 4px solid #00695c; }
+        .dep-card h3 { color: #00695c; font-size: 1rem; margin-bottom: 8px; }
+        .dep-disc-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f5f5f5; border-radius: 6px; margin-top: 6px; font-size: 0.85rem; }
         @media (max-width: 600px) {
             .form-grid { grid-template-columns: 1fr; }
             .prova-entry, .trabalho-entry { flex-direction: column; }
@@ -352,6 +358,7 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('cadastro')">+ Nova Disciplina</button>
         <button class="tab-btn" onclick="switchTab('proficiencia')">Proficiência</button>
+        <button class="tab-btn" onclick="switchTab('dependencia')">Dependência</button>
         <button class="tab-btn" onclick="switchTab('disciplinas')">Disciplinas</button>
         <button class="tab-btn" onclick="switchTab('timeline')">Tarefas</button>
         <button class="tab-btn" id="tabBtnAdmin" onclick="switchTab('admin')" style="display:none;">Usuários</button>
@@ -462,6 +469,55 @@
         </div>
     </div>
 
+    <!-- TAB: Dependência -->
+    <div id="tab-dependencia" class="tab-content">
+        <div class="card">
+            <h2>Cadastrar Provas de Dependência</h2>
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>Identificação</label>
+                    <input type="text" id="depNome" placeholder="Ex: Dependências 2026/1">
+                </div>
+                <div class="form-group">
+                    <label>Data da Prova</label>
+                    <input type="date" id="depData">
+                </div>
+                <div class="form-group">
+                    <label>Modalidade</label>
+                    <select id="depModalidade">
+                        <option value="presencial">Presencial</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Horário de Início</label>
+                    <input type="time" id="depHoraInicio">
+                </div>
+                <div class="form-group">
+                    <label>Horário de Fim</label>
+                    <input type="time" id="depHoraFim">
+                </div>
+                <div class="form-group">
+                    <label>Solicitar elaboração (dias antes da prova)</label>
+                    <input type="number" id="depDiasAntecedencia" min="1" value="15">
+                </div>
+            </div>
+            <div class="provas-section">
+                <h2 style="margin-top:16px;">Disciplinas</h2>
+                <div id="depDiscContainer"></div>
+                <button type="button" class="btn-add-prova" onclick="adicionarDiscDep()">+ Adicionar Disciplina</button>
+            </div>
+            <div class="btn-group" style="margin-top:16px;">
+                <button type="button" class="btn btn-primary" onclick="salvarDependencia()">Salvar Dependência</button>
+                <button type="button" class="btn btn-secondary" onclick="limparFormDep()">Limpar</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Provas de Dependência Cadastradas</h2>
+            <div id="listaDependencias"></div>
+        </div>
+    </div>
+
     <!-- TAB: Disciplinas -->
     <div id="tab-disciplinas" class="tab-content">
         <div class="card">
@@ -515,6 +571,7 @@
                 <span class="situacao-chips-label">Tipo:</span>
                 <span class="chip chip-tipo chip-on" data-tipo="disciplina" onclick="toggleChipTipo(this)"><span class="chip-box">✓</span> Disciplina</span>
                 <span class="chip chip-tipo chip-on" data-tipo="proficiencia" onclick="toggleChipTipo(this)"><span class="chip-box">✓</span> Proficiência</span>
+                <span class="chip chip-tipo chip-on" data-tipo="dependencia" onclick="toggleChipTipo(this)"><span class="chip-box">✓</span> Dependência</span>
             </div>
             <div id="tarefasContainer"></div>
         </div>
@@ -593,7 +650,7 @@
         <h3 id="modalTitulo">E-mail</h3>
         <p style="margin-bottom:6px; font-size:0.82rem; color:#666;"><strong>Para:</strong> <span id="modalPara"></span></p>
         <p style="margin-bottom:12px; font-size:0.82rem; color:#666;"><strong>Assunto:</strong> <span id="modalAssunto"></span></p>
-        <textarea id="modalCorpo" readonly></textarea>
+        <div id="modalCorpo" style="width:100%; min-height:220px; max-height:340px; overflow-y:auto; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:0.9rem; font-family:inherit; line-height:1.6; white-space:pre-wrap; background:#f9f9f9;"></div>
         <div class="modal-actions">
             <button class="btn btn-secondary btn-sm" onclick="fecharModal()">Fechar</button>
             <button class="btn btn-primary btn-sm" onclick="copiarEmail()">Copiar Texto</button>
@@ -694,6 +751,57 @@
     </div>
 </div>
 
+<!-- Modal Editar Proficiência -->
+<div class="modal-overlay" id="modalEditarProf">
+    <div class="modal">
+        <h3>Editar Prova de Proficiência</h3>
+        <input type="hidden" id="editProfId">
+        <div class="form-group" style="margin-bottom:14px;">
+            <label style="font-size:0.8rem; font-weight:600; color:#555; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; display:block;">Identificação</label>
+            <input type="text" id="editProfNome" placeholder="Ex: Inglês 2026" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:0.95rem;">
+        </div>
+        <div class="provas-section">
+            <h2 style="margin-top:0; margin-bottom:10px;">Datas das Provas</h2>
+            <div id="editProfDatasContainer"></div>
+            <button type="button" class="btn-add-prova" onclick="adicionarDataProfEdit()">+ Adicionar Data</button>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn btn-secondary btn-sm" onclick="fecharModalEditarProf()">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarEdicaoProf()">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Dependência -->
+<div class="modal-overlay" id="modalEditarDep">
+    <div class="modal" style="max-width:800px;">
+        <h3>Editar Prova de Dependência</h3>
+        <input type="hidden" id="editDepId">
+        <div class="form-grid" style="margin-bottom:14px;">
+            <div class="form-group full"><label>Identificação</label><input type="text" id="editDepNome"></div>
+            <div class="form-group"><label>Data da Prova</label><input type="date" id="editDepData"></div>
+            <div class="form-group"><label>Modalidade</label>
+                <select id="editDepModalidade">
+                    <option value="presencial">Presencial</option>
+                    <option value="online">Online</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Horário de Início</label><input type="time" id="editDepHoraInicio"></div>
+            <div class="form-group"><label>Horário de Fim</label><input type="time" id="editDepHoraFim"></div>
+            <div class="form-group"><label>Elaboração (dias antes)</label><input type="number" id="editDepDiasAntecedencia" min="1" value="15"></div>
+        </div>
+        <div class="provas-section">
+            <h2 style="margin-top:0; margin-bottom:10px;">Disciplinas</h2>
+            <div id="editDepDiscContainer"></div>
+            <button type="button" class="btn-add-prova" onclick="adicionarDiscDepEdit()">+ Adicionar Disciplina</button>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn btn-secondary btn-sm" onclick="fecharModalEditarDep()">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="salvarEdicaoDep()">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -721,6 +829,7 @@ let currentUser = null;
 let currentUserProfile = null;
 let cachedDisciplinas = [];
 let cachedProficiencias = [];
+let cachedDependencias = [];
 let cachedStatus = {};
 let cachedEmailBib = '';
 let ultimoUsuarioCriado = null;
@@ -888,7 +997,7 @@ async function criarPrimeiroAdmin() {
             nome, email, role: 'admin', mustChangePassword: false,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp()
         });
-        await db.collection('userData').doc(uid).set({ disciplinas: [], proficiencias: [], emailStatus: {}, emailBiblioteca: '' });
+        await db.collection('userData').doc(uid).set({ disciplinas: [], proficiencias: [], dependencias: [], emailStatus: {}, emailBiblioteca: '' });
         await db.collection('_config').doc('setup').set({ initialized: true, criadoEm: firebase.firestore.FieldValue.serverTimestamp() });
         // onAuthStateChanged will handle the rest
     } catch (err) {
@@ -964,11 +1073,12 @@ async function loadUserData() {
             const data = doc.data();
             cachedDisciplinas = data.disciplinas || [];
             cachedProficiencias = data.proficiencias || [];
+            cachedDependencias = data.dependencias || [];
             cachedStatus = data.emailStatus || {};
             cachedEmailBib = data.emailBiblioteca || '';
         } else {
-            await db.collection('userData').doc(currentUser.uid).set({ disciplinas: [], proficiencias: [], emailStatus: {}, emailBiblioteca: '' });
-            cachedDisciplinas = []; cachedProficiencias = []; cachedStatus = {}; cachedEmailBib = '';
+            await db.collection('userData').doc(currentUser.uid).set({ disciplinas: [], proficiencias: [], dependencias: [], emailStatus: {}, emailBiblioteca: '' });
+            cachedDisciplinas = []; cachedProficiencias = []; cachedDependencias = []; cachedStatus = {}; cachedEmailBib = '';
         }
     } catch (err) { console.error('Erro ao carregar dados:', err); }
 }
@@ -990,7 +1100,7 @@ function iniciarApp() {
     document.getElementById('perfilNome').textContent = currentUserProfile.nome;
     document.getElementById('perfilEmail').textContent = currentUserProfile.email;
     document.getElementById('perfilRole').textContent = currentUserProfile.role === 'admin' ? 'Administrador' : 'Coordenador';
-    const abas = ['cadastro', 'proficiencia', 'disciplinas', 'timeline', 'perfil'];
+    const abas = ['cadastro', 'proficiencia', 'dependencia', 'disciplinas', 'timeline', 'perfil'];
     if (currentUserProfile.role === 'admin') abas.push('admin');
     const abaSalva = sessionStorage.getItem('activeTab');
     switchTab(abas.includes(abaSalva) ? abaSalva : 'cadastro');
@@ -1020,7 +1130,7 @@ async function adminCriarUsuario() {
             nome, email, role: 'convidado', mustChangePassword: true,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(), criadoPor: currentUser.uid
         });
-        await db.collection('userData').doc(uid).set({ disciplinas: [], proficiencias: [], emailStatus: {}, emailBiblioteca: '' });
+        await db.collection('userData').doc(uid).set({ disciplinas: [], proficiencias: [], dependencias: [], emailStatus: {}, emailBiblioteca: '' });
         await secondaryAuth.signOut();
 
         hideLoading();
@@ -1172,6 +1282,12 @@ async function saveProficiencias(arr) {
     try { await db.collection('userData').doc(currentUser.uid).update({ proficiencias: arr }); }
     catch (err) { showToast('Erro ao salvar. Verifique a conexão.', true); }
 }
+function getDependencias() { return cachedDependencias; }
+async function saveDependencias(arr) {
+    cachedDependencias = arr;
+    try { await db.collection('userData').doc(currentUser.uid).update({ dependencias: arr }); }
+    catch (err) { showToast('Erro ao salvar. Verifique a conexão.', true); }
+}
 async function saveStatus(obj) {
     cachedStatus = obj;
     try { await db.collection('userData').doc(currentUser.uid).update({ emailStatus: obj }); }
@@ -1224,6 +1340,7 @@ function getFeriados(ano) {
 function isFeriado(date) { return getFeriados(date.getFullYear()).includes(date.toISOString().split('T')[0]); }
 function isUtil(date) { const dow=date.getDay(); return dow!==0&&dow!==6&&!isFeriado(date); }
 function proximoDiaUtil(date) { const d=new Date(date); while(!isUtil(d)) d.setDate(d.getDate()+1); return d; }
+function anteriorDiaUtil(date) { const d=new Date(date); while(!isUtil(d)) d.setDate(d.getDate()-1); return d; }
 function adicionarDiasUteis(date,dias) { const d=new Date(date); d.setDate(d.getDate()+dias); return proximoDiaUtil(d); }
 function formatDate(date) { return new Date(date).toLocaleDateString('pt-BR',{timeZone:'UTC'}); }
 function formatDateISO(date) { return new Date(date).toISOString().split('T')[0]; }
@@ -1250,8 +1367,10 @@ function gerarEventos(disc) {
     const dataInicio = parseDate(disc.dataInicio);
     const id = disc.id;
 
-    const dataEmailPrograma = new Date(dataInicio); dataEmailPrograma.setDate(dataEmailPrograma.getDate()-60);
-    const prazoPrograma = adicionarDiasUteis(dataEmailPrograma, 15);
+    const d60 = new Date(dataInicio); d60.setDate(d60.getDate()-60);
+    const dataEmailPrograma = proximoDiaUtil(d60);
+    const prazoBase20Prog = new Date(dataEmailPrograma); prazoBase20Prog.setDate(prazoBase20Prog.getDate()+20);
+    const prazoPrograma = proximoDiaUtil(prazoBase20Prog);
     eventos.push({ key:`${id}_programa`, dataEmail:dataEmailPrograma, prazo:prazoPrograma, tipo:'programa',
         titulo:`Solicitar Programa da Disciplina`,
         descricao:`Enviar modelo do programa para ${disc.nomeProfessor} preencher até ${formatDate(prazoPrograma)}`, disc });
@@ -1265,8 +1384,10 @@ function gerarEventos(disc) {
 
     disc.provas.forEach((prova, i) => {
         const dataProva = parseDate(prova.data);
-        const dataEmailElab = new Date(dataProva); dataEmailElab.setDate(dataEmailElab.getDate()-15);
-        const prazoElab = adicionarDiasUteis(dataEmailElab, 7);
+        const d14 = new Date(dataProva); d14.setDate(d14.getDate()-14);
+        const dataEmailElab = anteriorDiaUtil(d14);
+        const d7 = new Date(dataProva); d7.setDate(d7.getDate()-7);
+        const prazoElab = proximoDiaUtil(d7);
 
         eventos.push({ key:`${id}_prova_elab_${i}`, dataEmail:dataEmailElab, prazo:prazoElab, tipo:'elaboracao_prova',
             titulo:`Solicitar Elaboração: ${prova.nome}`,
@@ -1281,17 +1402,18 @@ function gerarEventos(disc) {
             descricao:`Confirmar se ${disc.nomeProfessor} enviou a ${prova.nome} (prazo era ${formatDate(prazoElab)}). Se não recebeu, enviar cobrança urgente.`,
             disc, prova, provaIndex:i });
 
-        // Enviar para biblioteca
-        const dBib = new Date(dataVerificacao); dBib.setDate(dBib.getDate()+1);
-        const dataBib = proximoDiaUtil(dBib);
+        // Enviar para biblioteca — mesmo dia útil que a verificação
+        const dataBib = new Date(dataVerificacao);
         eventos.push({ key:`${id}_prova_bib_${i}`, dataEmail:dataBib, prazo:dataProva, tipo:'envio_biblioteca',
             titulo:`Solicitar Impressão: ${prova.nome}`,
             descricao:`Anexar a prova recebida e enviar para a biblioteca com ${prova.copias||30} cópias. Prova em ${formatDate(dataProva)}`,
             disc, prova, provaIndex:i });
 
-        const dataEmailCorrecao = new Date(dataProva); dataEmailCorrecao.setDate(dataEmailCorrecao.getDate()+1);
+        const dCorr1 = new Date(dataProva); dCorr1.setDate(dCorr1.getDate()+1);
+        const dataEmailCorrecao = proximoDiaUtil(dCorr1);
         const diasCorrecao = prova.prazoCorrecao || 20;
-        const prazoCorrecao = adicionarDiasUteis(dataEmailCorrecao, diasCorrecao);
+        const prazoBaseCorrecao = new Date(dataEmailCorrecao); prazoBaseCorrecao.setDate(prazoBaseCorrecao.getDate()+diasCorrecao);
+        const prazoCorrecao = proximoDiaUtil(prazoBaseCorrecao);
         eventos.push({ key:`${id}_prova_corr_${i}`, dataEmail:dataEmailCorrecao, prazo:prazoCorrecao, tipo:'correcao_prova',
             titulo:`Solicitar Correção: ${prova.nome}`,
             descricao:`Pedir que ${disc.nomeProfessor} corrija, lance no portal e entregue até ${formatDate(prazoCorrecao)}`,
@@ -1308,8 +1430,10 @@ function gerarEventos(disc) {
 
     (disc.trabalhos||[]).forEach((trab, i) => {
         const dataEntrega = parseDate(trab.data);
-        const dataEmailCorr = new Date(dataEntrega); dataEmailCorr.setDate(dataEmailCorr.getDate()+1);
-        const prazoCorr = adicionarDiasUteis(dataEmailCorr, trab.prazoCorrecao||20);
+        const dCorr1Trab = new Date(dataEntrega); dCorr1Trab.setDate(dCorr1Trab.getDate()+1);
+        const dataEmailCorr = proximoDiaUtil(dCorr1Trab);
+        const prazoBaseCorrTrab = new Date(dataEmailCorr); prazoBaseCorrTrab.setDate(prazoBaseCorrTrab.getDate()+(trab.prazoCorrecao||20));
+        const prazoCorr = proximoDiaUtil(prazoBaseCorrTrab);
         eventos.push({ key:`${id}_trab_corr_${i}`, dataEmail:dataEmailCorr, prazo:prazoCorr, tipo:'correcao_trabalho',
             titulo:`Solicitar Correção: ${trab.nome}`,
             descricao:`Pedir que ${disc.nomeProfessor} corrija trabalhos, lance no portal e entregue até ${formatDate(prazoCorr)}`,
@@ -1371,6 +1495,96 @@ function gerarEventosProficienciaItem(prof, dataItem, di) {
 }
 
 // ==========================================
+// GERAR EVENTOS DEPENDÊNCIA
+// ==========================================
+function gerarEventosDependenciaDisc(dep, disc, discIdx) {
+    const dataProva = parseDate(dep.data);
+    const diasAnt = dep.diasAntecedencia || 15;
+    const id = dep.id;
+
+    // Solicitar Elaboração: diasAnt dias antes → dia útil anterior
+    const dElab = new Date(dataProva); dElab.setDate(dElab.getDate() - diasAnt);
+    const dataElab = anteriorDiaUtil(dElab);
+
+    // Prazo elaboração: 7 dias antes da prova → próximo dia útil
+    const d7 = new Date(dataProva); d7.setDate(d7.getDate() - 7);
+    const prazoElab = proximoDiaUtil(d7);
+
+    // Verificar Elaboração, Verificar Quantitativo e Solicitar Impressão: 1 dia útil após prazo elaboração
+    const dPosElab = new Date(prazoElab); dPosElab.setDate(dPosElab.getDate() + 1);
+    const dataPosElab = proximoDiaUtil(dPosElab);
+
+    // Solicitar Correção: próximo dia útil após a prova; prazo = 20 dias corridos → próximo dia útil
+    const dCorr = new Date(dataProva); dCorr.setDate(dCorr.getDate() + 1);
+    const dataCorr = proximoDiaUtil(dCorr);
+    const prazoBaseCorr = new Date(dataCorr); prazoBaseCorr.setDate(prazoBaseCorr.getDate() + 20);
+    const prazoCorr = proximoDiaUtil(prazoBaseCorr);
+
+    // Verificar Lançamento de Nota: próximo dia útil após prazo correção
+    const dNota = new Date(prazoCorr); dNota.setDate(dNota.getDate() + 1);
+    const dataNota = proximoDiaUtil(dNota);
+
+    const copiasRegistradas = disc.copias ? ` · ${disc.copias} cópias` : '';
+    const prefix = `${id}_dep_${discIdx}`;
+    return [
+        {
+            key: `${prefix}_elab`,
+            dataEmail: dataElab,
+            prazo: prazoElab,
+            tipo: 'dep_elaboracao',
+            titulo: `Solicitar Elaboração: ${disc.nome}`,
+            descricao: `Enviar modelo de prova para ${disc.nomeProfessor} elaborar até ${formatDate(prazoElab)}. Prova: ${formatDate(dataProva)}`,
+            dep, disc, discIdx
+        },
+        {
+            key: `${prefix}_verif_elab`,
+            dataEmail: dataPosElab,
+            prazo: dataPosElab,
+            tipo: 'dep_verif_elaboracao',
+            titulo: `Verificar Elaboração: ${disc.nome}`,
+            descricao: `Confirmar se ${disc.nomeProfessor} enviou a prova de dependência de ${disc.nome} (prazo era ${formatDate(prazoElab)}). Se não recebeu, cobrar urgente.`,
+            dep, disc, discIdx
+        },
+        {
+            key: `${prefix}_quantitativo`,
+            dataEmail: dataPosElab,
+            prazo: dataPosElab,
+            tipo: 'dep_quantitativo',
+            titulo: `Verificar Quantitativo: ${disc.nome}`,
+            descricao: `Verificar quantos alunos farão a prova de dependência de ${disc.nome} e registrar o número de cópias necessárias${copiasRegistradas}.`,
+            dep, disc, discIdx
+        },
+        {
+            key: `${prefix}_imp`,
+            dataEmail: dataPosElab,
+            prazo: dataProva,
+            tipo: 'dep_impressao',
+            titulo: `Solicitar Impressão: ${disc.nome}`,
+            descricao: `Enviar a prova de dependência de ${disc.nome} para impressão${disc.copias ? ` (${disc.copias} cópias)` : ''}. Prova em ${formatDate(dataProva)}.`,
+            dep, disc, discIdx
+        },
+        {
+            key: `${prefix}_corr`,
+            dataEmail: dataCorr,
+            prazo: prazoCorr,
+            tipo: 'dep_correcao',
+            titulo: `Solicitar Correção: ${disc.nome}`,
+            descricao: `Pedir que ${disc.nomeProfessor} corrija a prova de dependência de ${disc.nome}, lance no portal e entregue até ${formatDate(prazoCorr)}.`,
+            dep, disc, discIdx
+        },
+        {
+            key: `${prefix}_nota`,
+            dataEmail: dataNota,
+            prazo: dataNota,
+            tipo: 'dep_nota',
+            titulo: `Verificar Lançamento de Nota: ${disc.nome}`,
+            descricao: `Confirmar se ${disc.nomeProfessor} lançou as notas da prova de dependência de ${disc.nome} no portal (prazo era ${formatDate(prazoCorr)}). Se não lançou, cobrar urgente.`,
+            dep, disc, discIdx
+        }
+    ];
+}
+
+// ==========================================
 // MODELOS DE E-MAIL
 // ==========================================
 function gerarEmail(evento) {
@@ -1391,8 +1605,8 @@ function gerarEmail(evento) {
             break;
         case 'verificacao_envio': {
             const dataProvaVer = parseDate(evento.prova.data);
-            const dataEmailElabVer = new Date(dataProvaVer); dataEmailElabVer.setDate(dataEmailElabVer.getDate()-15);
-            const prazoElabVer = adicionarDiasUteis(dataEmailElabVer, 7);
+            const d7ver = new Date(dataProvaVer); d7ver.setDate(d7ver.getDate()-7);
+            const prazoElabVer = proximoDiaUtil(d7ver);
             assunto = `URGENTE – Envio de Prova Pendente – ${disc} – ${evento.prova.nome}`;
             corpo = `Prezado(a) ${prof},\n\nEspero que esteja bem.\n\nEntro em contato para informar que o prazo para envio da *${evento.prova.nome}* da disciplina *${disc}* expirou em ${formatDate(prazoElabVer)} e a prova ainda não foi recebida pela coordenação.\n\nA aplicação está prevista para ${formatDate(dataProvaVer)}, sendo necessário tempo para impressão das cópias. Por isso, solicito com urgência o envio da prova elaborada o mais breve possível.\n\nCaso já tenha enviado, entre em contato imediatamente para confirmarmos o recebimento.\n\nAtenciosamente,\nCoordenação`;
             break;
@@ -1438,6 +1652,44 @@ function gerarEmailProficiencia(evento) {
         corpo = `Prezados alunos,\n\nLembramos que a *Prova de Proficiência* está programada para:\n\n*Data: ${dataProva}*\n${horarioStr}*Modalidade: Online*\n\nA prova é *${tipoLabel}*.\n\nAtenção: o prazo para inscrição é *${prazoInscricao}*. Não deixe para a última hora!\n\nPara mais informações sobre como se inscrever, entre em contato com a coordenação.\n\nAtenciosamente,\nCoordenação`;
     }
     return { assunto, corpo, para: '' };
+}
+
+function gerarEmailDependencia(evento) {
+    const dep = evento.dep, disc = evento.disc;
+    const prof = disc.nomeProfessor;
+    const disciplina = disc.nome;
+    const prazo = formatDate(evento.prazo);
+    const dataProva = formatDate(parseDate(dep.data));
+    const modalidade = dep.modalidade === 'online' ? 'Online' : 'Presencial';
+    const horario = (dep.horaInicio && dep.horaFim) ? `${dep.horaInicio} às ${dep.horaFim}` : dep.horaInicio || '';
+    let assunto = '', corpo = '';
+    switch (evento.tipo) {
+        case 'dep_elaboracao':
+            assunto = `Elaboração de Prova de Dependência – ${disciplina}`;
+            corpo = `Prezado(a) ${prof},\n\nEspero que esteja bem.\n\nSolicito a elaboração da prova de dependência da disciplina *${disciplina}*, cuja aplicação está prevista para ${dataProva}${horario ? ` (${horario})` : ''}.\n\n*Modalidade: ${modalidade}*\n\nSegue em anexo o modelo de prova para preenchimento.\n\nPrazo para envio da prova elaborada: ${prazo}\n\nCaso tenha alguma dúvida, estou à disposição.\n\nAtenciosamente,\nCoordenação`;
+            break;
+        case 'dep_verif_elaboracao':
+            assunto = `URGENTE – Envio de Prova de Dependência Pendente – ${disciplina}`;
+            corpo = `Prezado(a) ${prof},\n\nEspero que esteja bem.\n\nEntro em contato para informar que o prazo para envio da prova de dependência de *${disciplina}* expirou em ${prazo} e a prova ainda não foi recebida pela coordenação.\n\nA aplicação está prevista para ${dataProva}, sendo necessário tempo para impressão. Por isso, solicito com urgência o envio da prova elaborada o mais breve possível.\n\nCaso já tenha enviado, entre em contato imediatamente para confirmarmos o recebimento.\n\nAtenciosamente,\nCoordenação`;
+            break;
+        case 'dep_quantitativo':
+            assunto = '';
+            corpo = '';
+            break;
+        case 'dep_impressao':
+            assunto = `Solicitação de Impressão – Prova de Dependência – ${disciplina}`;
+            corpo = `Prezado(a),\n\nSolicito a impressão da prova de dependência conforme dados abaixo:\n\nDisciplina: ${disciplina}\nProfessor(a): ${prof}\nData da Prova: ${dataProva}${horario ? `\nHorário: ${horario}` : ''}\nModalidade: ${modalidade}\nNúmero de cópias: ${disc.copias||30}\n\nSegue em anexo o arquivo da prova para impressão.\n\nAtenciosamente,\nCoordenação`;
+            return { assunto, corpo, para: '' };
+        case 'dep_correcao':
+            assunto = `Correção de Prova de Dependência – ${disciplina}`;
+            corpo = `Prezado(a) ${prof},\n\nEspero que esteja bem.\n\nInformo que a prova de dependência da disciplina *${disciplina}* foi aplicada em ${dataProva}.\n\nSolicito que:\n• Realize a correção das provas;\n• Lance as notas no portal acadêmico;\n• Entregue as provas corrigidas no atendimento.\n\nPrazo: ${prazo}\n\nCaso tenha alguma dúvida, estou à disposição.\n\nAtenciosamente,\nCoordenação`;
+            break;
+        case 'dep_nota':
+            assunto = `URGENTE – Lançamento de Nota Pendente – Dependência – ${disciplina}`;
+            corpo = `Prezado(a) ${prof},\n\nEspero que esteja bem.\n\nEntro em contato para verificar o lançamento das notas da prova de dependência de *${disciplina}*.\n\nO prazo para correção e lançamento expirou em ${prazo} e as notas ainda não constam no portal acadêmico.\n\nSolicito com urgência que:\n• Realize a correção das provas;\n• Lance as notas no portal acadêmico;\n• Entregue as provas corrigidas no atendimento.\n\nCaso já tenha realizado todos os procedimentos, por favor desconsidere este e-mail.\n\nAtenciosamente,\nCoordenação`;
+            break;
+    }
+    return { assunto, corpo, para: disc.emailProfessor };
 }
 
 // ==========================================
@@ -1518,7 +1770,7 @@ function renderProficiencias() {
             const horario = (d.horaInicio && d.horaFim) ? ` · ${d.horaInicio}–${d.horaFim}` : d.horaInicio ? ` · ${d.horaInicio}` : '';
             return `<div class="prof-data-item"><span>${formatDate(parseDate(d.data))}${horario}</span><span class="badge" style="${d.tipoPagamento==='paga'?'background:#fff3e0;color:#e65100;':'background:#e8f5e9;color:#2e7d32;'}">${d.tipoPagamento==='paga'?'Paga':'Gratuita'}</span></div>`;
         }).join('');
-        return `<div class="prof-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><h3>${escapeHtml(prof.nome)}</h3><button class="btn btn-danger btn-sm" onclick="excluirProficiencia('${prof.id}')">Excluir</button></div>${datasHtml}</div>`;
+        return `<div class="prof-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><h3>${escapeHtml(prof.nome)}</h3><div style="display:flex;gap:6px;"><button class="btn btn-primary btn-sm" onclick="editarProficiencia('${prof.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="excluirProficiencia('${prof.id}')">Excluir</button></div></div>${datasHtml}</div>`;
     }).join('');
 }
 
@@ -1642,7 +1894,7 @@ function calcSituacao(pendentes, hoje) {
 }
 
 function renderTimeline() {
-    const discs = getDisciplinas(), profs = getProficiencias(), status = getStatus();
+    const discs = getDisciplinas(), profs = getProficiencias(), deps = getDependencias(), status = getStatus();
     const container = document.getElementById('tarefasContainer');
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const filtroTexto = (document.getElementById('filtroTarefaDisc')?.value||'').toLowerCase();
@@ -1660,7 +1912,7 @@ function renderTimeline() {
             ordenadas.map(d => `<option value="${escapeHtml(d.id)}" ${d.id===atual?'selected':''}>${escapeHtml(d.nomeDisciplina)}</option>`).join('');
     }
 
-    if (discs.length === 0 && profs.length === 0) {
+    if (discs.length === 0 && profs.length === 0 && deps.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>Nenhuma disciplina cadastrada</p><small>Clique em "+ Nova Disciplina" para começar</small></div>';
         return;
     }
@@ -1694,6 +1946,22 @@ function renderTimeline() {
                 if (!chipsAtivos.has(situacao)) return;
                 const proxData = pendentes.length > 0 ? pendentes[0].dataEmail : null;
                 items.push({ type: 'prof', prof, dataItem, di, eventos, pendentes, concluidos, situacao, proxData, nome: prof.nome });
+            });
+        });
+    }
+
+    if (!filtroDisc2 && tiposAtivos.has('dependencia')) {
+        deps.forEach(dep => {
+            const nomeLower = dep.nome.toLowerCase();
+            if (filtroTexto && !nomeLower.includes(filtroTexto) && !('dependência').includes(filtroTexto)) return;
+            (dep.disciplinas||[]).forEach((disc, discIdx) => {
+                const eventos = gerarEventosDependenciaDisc(dep, disc, discIdx);
+                const pendentes = eventos.filter(ev => !status[ev.key]);
+                const concluidos = eventos.filter(ev => !!status[ev.key]);
+                const situacao = calcSituacao(pendentes, hoje);
+                if (!chipsAtivos.has(situacao)) return;
+                const proxData = pendentes.length > 0 ? pendentes[0].dataEmail : null;
+                items.push({ type: 'dep', dep, disc, discIdx, eventos, pendentes, concluidos, situacao, proxData, nome: dep.nome + ' – ' + disc.nome });
             });
         });
     }
@@ -1761,6 +2029,53 @@ function renderTimeline() {
                     <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="verEtapas('${disc.id}')">Ver Etapas</button>
                 </div>
                 <div class="task-progress-bar"><div class="task-progress-fill" style="width:${pct}%"></div></div>
+            </div>`;
+        }
+
+        // Dependência
+        if (item.type === 'dep') {
+            const { dep, disc, discIdx } = item;
+            const dataProvaFmt = formatDate(parseDate(dep.data));
+            const modalLabel = dep.modalidade === 'online' ? 'Online' : 'Presencial';
+            if (isConcluida) {
+                return `<div class="task-card done-card">
+                    <div class="task-card-header">
+                        <div><h3>Dependência – ${escapeHtml(disc.nome)}</h3><p class="task-professor">${escapeHtml(dep.nome)} &nbsp;·&nbsp; ${dataProvaFmt} &nbsp;·&nbsp; <span style="font-weight:600;">${modalLabel}</span></p></div>
+                        <span class="badge badge-done">Concluída</span>
+                    </div>
+                    <div class="task-done-msg">✓ Todas as ${totalEtapas} etapas concluídas!</div>
+                    <div class="task-progress-bar"><div class="task-progress-fill" style="width:100%;"></div></div>
+                    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-sm" style="background:#ffebee; color:#b71c1c; border:1px solid #ef9a9a; font-weight:600;" onclick="desfazerDependencia('${dep.id}',${discIdx})">↩ Desfazer última etapa</button>
+                        <button class="btn btn-secondary btn-sm" onclick="verEtapasDependencia('${dep.id}',${discIdx})">Ver Etapas</button>
+                    </div>
+                </div>`;
+            }
+            const proxima = pendentes[0];
+            const etapaNum = concluidos.length + 1;
+            const botaoAcaoDep = proxima.tipo === 'dep_quantitativo'
+                ? `<button class="btn btn-primary btn-sm" onclick="registrarQuantitativoDep('${proxima.key}','${dep.id}',${discIdx})">📊 Registrar N° de Cópias</button>`
+                : `<button class="btn btn-primary btn-sm" onclick='verEmail(${JSON.stringify(proxima.key)})'>✉ Ver E-mail</button>
+                        <button class="btn btn-success btn-sm" onclick="marcarFeito('${proxima.key}')">✓ Marcar como Feito</button>`;
+            return `<div class="task-card ${cardClassMap[situacao]}">
+                <div class="task-card-header">
+                    <div><h3>Dependência – ${escapeHtml(disc.nome)}</h3><p class="task-professor">${escapeHtml(dep.nome)} &nbsp;·&nbsp; ${dataProvaFmt} &nbsp;·&nbsp; <span style="font-weight:600;">${modalLabel}</span></p></div>
+                    <span class="badge ${badgeMap[situacao]}">${labelMap[situacao]}</span>
+                </div>
+                <div class="task-current">
+                    <div class="task-step">Etapa ${etapaNum} de ${totalEtapas} &nbsp;·&nbsp; ${pct}% concluído</div>
+                    <div class="task-date">${formatDate(proxima.dataEmail)}</div>
+                    <div class="task-title">${escapeHtml(proxima.titulo)}</div>
+                    <div class="task-desc">${escapeHtml(proxima.descricao)}</div>
+                </div>
+                <div class="task-actions" style="justify-content:space-between; align-items:flex-end;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        ${botaoAcaoDep}
+                        ${concluidos.length > 0 ? `<button class="btn btn-sm" style="background:#ffebee; color:#b71c1c; border:1px solid #ef9a9a; font-weight:600;" onclick="desfazerDependencia('${dep.id}',${discIdx})">↩ Desfazer</button>` : ''}
+                    </div>
+                    <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="verEtapasDependencia('${dep.id}',${discIdx})">Ver Etapas</button>
+                </div>
+                <div class="task-progress-bar"><div class="task-progress-fill" style="width:${pct}%;"></div></div>
             </div>`;
         }
 
@@ -1874,6 +2189,268 @@ async function desfazerProficiencia(profId, di) {
     showToast('Etapa desfeita.');
 }
 
+function verEtapasDependencia(depId, discIdx) {
+    const dep = getDependencias().find(d => d.id === depId);
+    if (!dep || !dep.disciplinas[discIdx]) return;
+    const disc = dep.disciplinas[discIdx];
+    const status = getStatus();
+    const eventos = gerarEventosDependenciaDisc(dep, disc, discIdx);
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    document.getElementById('modalEtapasTitulo').textContent = `Dependência – ${disc.nome}`;
+    document.getElementById('modalEtapasProf').textContent = `${dep.nome} · ${formatDate(parseDate(dep.data))} · ${dep.modalidade==='online'?'Online':'Presencial'}`;
+    const primeiroPendente = eventos.find(ev => !status[ev.key]);
+    document.getElementById('modalEtapasLista').innerHTML = eventos.map((ev, i) => {
+        const feita = !!status[ev.key];
+        const isAtual = !feita && ev === primeiroPendente;
+        const atrasada = !feita && ev.dataEmail < hoje;
+        let cls = feita ? 'feita' : isAtual ? (atrasada ? 'atrasada' : 'atual') : (atrasada ? 'atrasada' : 'futura');
+        let icone = feita ? '✓' : isAtual ? '→' : (i + 1);
+        return `<div class="etapa-item"><div class="etapa-icone ${cls}">${icone}</div><div class="etapa-info"><div class="etapa-titulo ${cls}">${escapeHtml(ev.titulo)}</div><div class="etapa-data">${formatDate(ev.dataEmail)}${feita?' · Concluído':atrasada?' · Atrasado':''}</div></div></div>`;
+    }).join('');
+    document.getElementById('modalEtapas').classList.add('active');
+}
+
+async function desfazerDependencia(depId, discIdx) {
+    const dep = getDependencias().find(d => d.id === depId);
+    if (!dep || !dep.disciplinas[discIdx]) return;
+    const st = getStatus();
+    const eventos = gerarEventosDependenciaDisc(dep, dep.disciplinas[discIdx], discIdx);
+    const feitos = eventos.filter(ev => st[ev.key]);
+    if (feitos.length === 0) return;
+    delete st[feitos[feitos.length-1].key];
+    await saveStatus(st); renderTimeline();
+    showToast('Etapa desfeita.');
+}
+
+async function registrarQuantitativoDep(key, depId, discIdx) {
+    const copias = prompt('Quantos alunos farão a prova? (número de cópias necessárias)');
+    if (copias === null) return;
+    const num = parseInt(copias);
+    if (isNaN(num) || num < 1) { showToast('Número inválido.', true); return; }
+    const arr = getDependencias();
+    const depIdx = arr.findIndex(d => d.id === depId);
+    if (depIdx === -1) return;
+    arr[depIdx].disciplinas[discIdx].copias = num;
+    await saveDependencias(arr);
+    const st = getStatus(); st[key] = true;
+    await saveStatus(st);
+    renderTimeline();
+    showToast(`Registrado: ${num} cópias necessárias.`);
+}
+
+// ==========================================
+// DEPENDÊNCIA - FORMULÁRIO
+// ==========================================
+function adicionarDiscDep() {
+    const div = document.createElement('div'); div.className = 'dep-disc-entry';
+    div.innerHTML = `
+        <div class="form-group"><label>Nome da Disciplina</label><input type="text" class="dep-disc-nome" placeholder="Ex: Matemática" required></div>
+        <div class="form-group"><label>Nome do(a) Professor(a)</label><input type="text" class="dep-disc-prof" placeholder="Nome completo" required></div>
+        <div class="form-group"><label>E-mail do(a) Professor(a)</label><input type="email" class="dep-disc-email" placeholder="prof@email.com" required></div>
+        <button type="button" class="btn-remove-prova" onclick="this.closest('.dep-disc-entry').remove()" title="Remover">&times;</button>`;
+    document.getElementById('depDiscContainer').appendChild(div);
+}
+
+async function salvarDependencia() {
+    const nome = document.getElementById('depNome').value.trim();
+    const data = document.getElementById('depData').value;
+    const modalidade = document.getElementById('depModalidade').value;
+    const horaInicio = document.getElementById('depHoraInicio').value;
+    const horaFim = document.getElementById('depHoraFim').value;
+    const diasAntecedencia = parseInt(document.getElementById('depDiasAntecedencia').value) || 15;
+    if (!nome || !data) { showToast('Preencha o nome e a data da prova.', true); return; }
+    const disciplinas = [];
+    document.querySelectorAll('#depDiscContainer .dep-disc-entry').forEach(el => {
+        const n = el.querySelector('.dep-disc-nome').value.trim();
+        const p = el.querySelector('.dep-disc-prof').value.trim();
+        const e = el.querySelector('.dep-disc-email').value.trim();
+        if (n && p) disciplinas.push({ nome: n, nomeProfessor: p, emailProfessor: e });
+    });
+    if (disciplinas.length === 0) { showToast('Adicione pelo menos uma disciplina.', true); return; }
+    const arr = getDependencias();
+    arr.push({ id: Date.now().toString(), nome, data, modalidade, horaInicio, horaFim, diasAntecedencia, disciplinas });
+    await saveDependencias(arr);
+    limparFormDep();
+    showToast('Prova de Dependência cadastrada!');
+    renderDependencias(); renderTimeline();
+}
+
+function limparFormDep() {
+    document.getElementById('depNome').value = '';
+    document.getElementById('depData').value = '';
+    document.getElementById('depModalidade').value = 'presencial';
+    document.getElementById('depHoraInicio').value = '';
+    document.getElementById('depHoraFim').value = '';
+    document.getElementById('depDiasAntecedencia').value = '15';
+    document.getElementById('depDiscContainer').innerHTML = '';
+}
+
+function renderDependencias() {
+    const deps = getDependencias();
+    const container = document.getElementById('listaDependencias');
+    if (!container) return;
+    if (deps.length === 0) { container.innerHTML = '<div class="empty-state"><p>Nenhuma prova de dependência cadastrada</p></div>'; return; }
+    container.innerHTML = deps.map(dep => {
+        const horario = (dep.horaInicio && dep.horaFim) ? ` · ${dep.horaInicio}–${dep.horaFim}` : dep.horaInicio ? ` · ${dep.horaInicio}` : '';
+        const modalLabel = dep.modalidade === 'online' ? 'Online' : 'Presencial';
+        const discsHtml = (dep.disciplinas||[]).map(d =>
+            `<div class="dep-disc-item"><span>${escapeHtml(d.nome)}</span><span style="color:#666; font-size:0.8rem;">${escapeHtml(d.nomeProfessor)}${d.copias ? ` &nbsp;·&nbsp; ${d.copias} cópias` : ''}</span></div>`
+        ).join('');
+        return `<div class="dep-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <h3>${escapeHtml(dep.nome)}</h3>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-primary btn-sm" onclick="editarDependencia('${dep.id}')">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="excluirDependencia('${dep.id}')">Excluir</button>
+                </div>
+            </div>
+            <div style="font-size:0.83rem; color:#555; margin-bottom:6px;">${formatDate(parseDate(dep.data))}${horario} · <strong>${modalLabel}</strong> · Elaboração ${dep.diasAntecedencia||15} dias antes</div>
+            ${discsHtml}
+        </div>`;
+    }).join('');
+}
+
+async function excluirDependencia(id) {
+    if (!confirm('Excluir esta prova de dependência e todas as suas disciplinas?')) return;
+    const arr = getDependencias().filter(d => d.id !== id);
+    const st = getStatus();
+    Object.keys(st).forEach(k => { if (k.startsWith(id+'_')) delete st[k]; });
+    await saveDependencias(arr); await saveStatus(st);
+    renderDependencias(); renderTimeline();
+    showToast('Prova de dependência excluída.');
+}
+
+// ==========================================
+// EDITAR PROFICIÊNCIA
+// ==========================================
+function editarProficiencia(id) {
+    const prof = getProficiencias().find(p => p.id === id);
+    if (!prof) return;
+    document.getElementById('editProfId').value = id;
+    document.getElementById('editProfNome').value = prof.nome;
+    const container = document.getElementById('editProfDatasContainer');
+    container.innerHTML = '';
+    (prof.datas||[]).forEach(d => {
+        const div = document.createElement('div'); div.className = 'prof-entry';
+        div.innerHTML = `<div class="form-group"><label>Data da Prova</label><input type="date" class="prof-data" value="${d.data}" required></div>
+            <div class="form-group" style="max-width:110px;"><label>Início</label><input type="time" class="prof-inicio" value="${d.horaInicio||''}"></div>
+            <div class="form-group" style="max-width:110px;"><label>Fim</label><input type="time" class="prof-fim" value="${d.horaFim||''}"></div>
+            <div class="form-group" style="max-width:160px;"><label>Tipo</label><select class="prof-tipo"><option value="gratuita" ${d.tipoPagamento!=='paga'?'selected':''}>Gratuita</option><option value="paga" ${d.tipoPagamento==='paga'?'selected':''}>Paga</option></select></div>
+            <button type="button" class="btn-remove-prova" onclick="this.closest('.prof-entry').remove()" title="Remover">&times;</button>`;
+        container.appendChild(div);
+    });
+    document.getElementById('modalEditarProf').classList.add('active');
+}
+
+function adicionarDataProfEdit() {
+    const div = document.createElement('div'); div.className = 'prof-entry';
+    div.innerHTML = `<div class="form-group"><label>Data da Prova</label><input type="date" class="prof-data" required></div>
+        <div class="form-group" style="max-width:110px;"><label>Início</label><input type="time" class="prof-inicio"></div>
+        <div class="form-group" style="max-width:110px;"><label>Fim</label><input type="time" class="prof-fim"></div>
+        <div class="form-group" style="max-width:160px;"><label>Tipo</label><select class="prof-tipo"><option value="gratuita">Gratuita</option><option value="paga">Paga</option></select></div>
+        <button type="button" class="btn-remove-prova" onclick="this.closest('.prof-entry').remove()" title="Remover">&times;</button>`;
+    document.getElementById('editProfDatasContainer').appendChild(div);
+}
+
+async function salvarEdicaoProf() {
+    const id = document.getElementById('editProfId').value;
+    const nome = document.getElementById('editProfNome').value.trim() || 'Prova de Proficiência';
+    const datas = [];
+    document.querySelectorAll('#editProfDatasContainer .prof-entry').forEach((el, idx) => {
+        const data = el.querySelector('.prof-data').value;
+        const inicio = el.querySelector('.prof-inicio').value;
+        const fim = el.querySelector('.prof-fim').value;
+        const tipo = el.querySelector('.prof-tipo').value;
+        if (data) datas.push({ id: `${Date.now()}_${idx}`, data, horaInicio: inicio, horaFim: fim, tipoPagamento: tipo });
+    });
+    if (datas.length === 0) { showToast('Adicione pelo menos uma data.', true); return; }
+    const arr = getProficiencias();
+    const idx = arr.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    // Limpar status das datas antigas
+    const st = getStatus();
+    Object.keys(st).forEach(k => { if (k.startsWith(id+'_')) delete st[k]; });
+    arr[idx] = { ...arr[idx], nome, datas };
+    await saveProficiencias(arr); await saveStatus(st);
+    fecharModalEditarProf();
+    renderProficiencias(); renderTimeline();
+    showToast('Proficiência atualizada!');
+}
+
+function fecharModalEditarProf() { document.getElementById('modalEditarProf').classList.remove('active'); }
+
+// ==========================================
+// EDITAR DEPENDÊNCIA
+// ==========================================
+function editarDependencia(id) {
+    const dep = getDependencias().find(d => d.id === id);
+    if (!dep) return;
+    document.getElementById('editDepId').value = id;
+    document.getElementById('editDepNome').value = dep.nome;
+    document.getElementById('editDepData').value = dep.data;
+    document.getElementById('editDepModalidade').value = dep.modalidade || 'presencial';
+    document.getElementById('editDepHoraInicio').value = dep.horaInicio || '';
+    document.getElementById('editDepHoraFim').value = dep.horaFim || '';
+    document.getElementById('editDepDiasAntecedencia').value = dep.diasAntecedencia || 15;
+    const container = document.getElementById('editDepDiscContainer');
+    container.innerHTML = '';
+    (dep.disciplinas||[]).forEach(d => {
+        const div = document.createElement('div'); div.className = 'dep-disc-entry';
+        div.innerHTML = `
+            <div class="form-group"><label>Nome da Disciplina</label><input type="text" class="dep-disc-nome" value="${escapeHtml(d.nome)}" required></div>
+            <div class="form-group"><label>Nome do(a) Professor(a)</label><input type="text" class="dep-disc-prof" value="${escapeHtml(d.nomeProfessor)}" required></div>
+            <div class="form-group"><label>E-mail do(a) Professor(a)</label><input type="email" class="dep-disc-email" value="${escapeHtml(d.emailProfessor)}" required></div>
+            <button type="button" class="btn-remove-prova" onclick="this.closest('.dep-disc-entry').remove()" title="Remover">&times;</button>`;
+        container.appendChild(div);
+    });
+    document.getElementById('modalEditarDep').classList.add('active');
+}
+
+function adicionarDiscDepEdit() {
+    const div = document.createElement('div'); div.className = 'dep-disc-entry';
+    div.innerHTML = `
+        <div class="form-group"><label>Nome da Disciplina</label><input type="text" class="dep-disc-nome" placeholder="Ex: Matemática" required></div>
+        <div class="form-group"><label>Nome do(a) Professor(a)</label><input type="text" class="dep-disc-prof" placeholder="Nome completo" required></div>
+        <div class="form-group"><label>E-mail do(a) Professor(a)</label><input type="email" class="dep-disc-email" placeholder="prof@email.com" required></div>
+        <button type="button" class="btn-remove-prova" onclick="this.closest('.dep-disc-entry').remove()" title="Remover">&times;</button>`;
+    document.getElementById('editDepDiscContainer').appendChild(div);
+}
+
+async function salvarEdicaoDep() {
+    const id = document.getElementById('editDepId').value;
+    const nome = document.getElementById('editDepNome').value.trim();
+    const data = document.getElementById('editDepData').value;
+    const modalidade = document.getElementById('editDepModalidade').value;
+    const horaInicio = document.getElementById('editDepHoraInicio').value;
+    const horaFim = document.getElementById('editDepHoraFim').value;
+    const diasAntecedencia = parseInt(document.getElementById('editDepDiasAntecedencia').value) || 15;
+    if (!nome || !data) { showToast('Preencha o nome e a data da prova.', true); return; }
+    const disciplinas = [];
+    const arrAntigo = getDependencias().find(d => d.id === document.getElementById('editDepId').value);
+    document.querySelectorAll('#editDepDiscContainer .dep-disc-entry').forEach((el, idx) => {
+        const n = el.querySelector('.dep-disc-nome').value.trim();
+        const p = el.querySelector('.dep-disc-prof').value.trim();
+        const e = el.querySelector('.dep-disc-email').value.trim();
+        // Preserva cópias registradas via "Verificar Quantitativo" se já existirem
+        const copias = arrAntigo?.disciplinas?.[idx]?.copias || undefined;
+        if (n && p) disciplinas.push({ nome: n, nomeProfessor: p, emailProfessor: e, ...(copias ? { copias } : {}) });
+    });
+    if (disciplinas.length === 0) { showToast('Adicione pelo menos uma disciplina.', true); return; }
+    const arr = getDependencias();
+    const idx = arr.findIndex(d => d.id === id);
+    if (idx === -1) return;
+    // Limpar status antigos desta dependência
+    const st = getStatus();
+    Object.keys(st).forEach(k => { if (k.startsWith(id+'_')) delete st[k]; });
+    arr[idx] = { ...arr[idx], nome, data, modalidade, horaInicio, horaFim, diasAntecedencia, disciplinas };
+    await saveDependencias(arr); await saveStatus(st);
+    fecharModalEditarDep();
+    renderDependencias(); renderTimeline();
+    showToast('Dependência atualizada!');
+}
+
+function fecharModalEditarDep() { document.getElementById('modalEditarDep').classList.remove('active'); }
+
 function toggleChip(el) {
     el.classList.toggle('chip-on');
     const box = el.querySelector('.chip-box');
@@ -1897,20 +2474,51 @@ function verEmail(key) {
             });
         });
     }
+    if (!eventoAlvo) {
+        getDependencias().forEach(dep => {
+            (dep.disciplinas||[]).forEach((disc, discIdx) => {
+                gerarEventosDependenciaDisc(dep, disc, discIdx).forEach(ev => { if (ev.key===key) eventoAlvo=ev; });
+            });
+        });
+    }
     if (!eventoAlvo) return;
+    const tiposDep = ['dep_elaboracao','dep_verif_elaboracao','dep_quantitativo','dep_impressao','dep_correcao','dep_nota'];
     const email = (eventoAlvo.tipo==='prof_comunicado'||eventoAlvo.tipo==='prof_lembrete')
-        ? gerarEmailProficiencia(eventoAlvo) : gerarEmail(eventoAlvo);
+        ? gerarEmailProficiencia(eventoAlvo)
+        : tiposDep.includes(eventoAlvo.tipo) ? gerarEmailDependencia(eventoAlvo)
+        : gerarEmail(eventoAlvo);
     currentEmail = email;
     document.getElementById('modalTitulo').textContent = eventoAlvo.titulo;
     document.getElementById('modalPara').textContent = email.para || 'Alunos (preencher destinatário)';
     document.getElementById('modalAssunto').textContent = email.assunto;
-    document.getElementById('modalCorpo').value = email.corpo;
+    // Renderiza *texto* como negrito no preview
+    const htmlCorpo = email.corpo.split('\n').map(line =>
+        escapeHtml(line).replace(/\*(.*?)\*/g, '<b>$1</b>')
+    ).join('<br>');
+    document.getElementById('modalCorpo').innerHTML = htmlCorpo;
     document.getElementById('modalEmail').classList.add('active');
 }
 let currentEmail = null;
 function fecharModal() { document.getElementById('modalEmail').classList.remove('active'); }
-function copiarEmail() { navigator.clipboard.writeText(document.getElementById('modalCorpo').value).then(() => showToast('Texto copiado!')); }
-function abrirMailto() { if (!currentEmail) return; window.open(`mailto:${currentEmail.para}?subject=${encodeURIComponent(currentEmail.assunto)}&body=${encodeURIComponent(currentEmail.corpo)}`); }
+function copiarEmail() {
+    const div = document.getElementById('modalCorpo');
+    // Tenta copiar com formatação HTML (negrito preservado ao colar no Gmail/Outlook)
+    try {
+        const item = new ClipboardItem({
+            'text/html': new Blob([div.innerHTML.replace(/<br>/g, '\n')], { type: 'text/html' }),
+            'text/plain': new Blob([div.innerText], { type: 'text/plain' })
+        });
+        navigator.clipboard.write([item]).then(() => showToast('Texto copiado!'));
+    } catch {
+        navigator.clipboard.writeText(div.innerText).then(() => showToast('Texto copiado!'));
+    }
+}
+function abrirMailto() {
+    if (!currentEmail) return;
+    // mailto é texto simples — remove os asteriscos mas mantém o conteúdo
+    const bodyText = currentEmail.corpo.replace(/\*(.*?)\*/g, '$1');
+    window.open(`mailto:${currentEmail.para}?subject=${encodeURIComponent(currentEmail.assunto)}&body=${encodeURIComponent(bodyText)}`);
+}
 
 // ==========================================
 // BIBLIOTECA
@@ -1983,6 +2591,7 @@ function switchTab(name) {
     if (name==='disciplinas') renderDisciplinas();
     if (name==='timeline') renderTimeline();
     if (name==='proficiencia') renderProficiencias();
+    if (name==='dependencia') renderDependencias();
     if (name==='admin' && currentUserProfile?.role==='admin') renderAdminUsuarios();
     sessionStorage.setItem('activeTab', name);
 }
