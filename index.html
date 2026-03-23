@@ -1410,13 +1410,15 @@ function gerarEmailProficiencia(evento) {
     const dataProva = formatDate(parseDate(evento.dataItem.data));
     const tipoLabel = evento.dataItem.tipoPagamento === 'paga' ? 'paga' : 'gratuita';
     const prazoInscricao = formatDate(evento.prazo);
+    const hi = evento.dataItem.horaInicio, hf = evento.dataItem.horaFim;
+    const horarioStr = (hi && hf) ? `*Horário: ${hi} às ${hf}*\n` : hi ? `*Horário: a partir das ${hi}*\n` : '';
     let assunto, corpo;
     if (evento.tipo === 'prof_comunicado') {
         assunto = `Prova de Proficiência – ${dataProva}`;
-        corpo = `Prezados alunos,\n\nInformamos que a próxima *Prova de Proficiência* está programada para o dia *${dataProva}*.\n\nA prova é *${tipoLabel}*.\n\n*Prazo para inscrição: ${prazoInscricao}*\n\nPara mais informações sobre como se inscrever, entre em contato com a coordenação.\n\nAtenciosamente,\nCoordenação`;
+        corpo = `Prezados alunos,\n\nInformamos que a próxima *Prova de Proficiência* está programada para:\n\n*Data: ${dataProva}*\n${horarioStr}\nA prova é *${tipoLabel}*.\n\n*Prazo para inscrição: ${prazoInscricao}*\n\nPara mais informações sobre como se inscrever, entre em contato com a coordenação.\n\nAtenciosamente,\nCoordenação`;
     } else {
         assunto = `Lembrete – Prova de Proficiência – ${dataProva}`;
-        corpo = `Prezados alunos,\n\nLembramos que a *Prova de Proficiência* está programada para o dia *${dataProva}*.\n\nA prova é *${tipoLabel}*.\n\nAtenção: o prazo para inscrição é *${prazoInscricao}*. Não deixe para a última hora!\n\nPara mais informações sobre como se inscrever, entre em contato com a coordenação.\n\nAtenciosamente,\nCoordenação`;
+        corpo = `Prezados alunos,\n\nLembramos que a *Prova de Proficiência* está programada para:\n\n*Data: ${dataProva}*\n${horarioStr}\nA prova é *${tipoLabel}*.\n\nAtenção: o prazo para inscrição é *${prazoInscricao}*. Não deixe para a última hora!\n\nPara mais informações sobre como se inscrever, entre em contato com a coordenação.\n\nAtenciosamente,\nCoordenação`;
     }
     return { assunto, corpo, para: '' };
 }
@@ -1457,6 +1459,8 @@ function adicionarTrabalhoEdit() {
 function adicionarDataProf() {
     const div = document.createElement('div'); div.className = 'prof-entry';
     div.innerHTML = `<div class="form-group"><label>Data da Prova</label><input type="date" class="prof-data" required></div>
+        <div class="form-group" style="max-width:110px;"><label>Início</label><input type="time" class="prof-inicio" required></div>
+        <div class="form-group" style="max-width:110px;"><label>Fim</label><input type="time" class="prof-fim" required></div>
         <div class="form-group" style="max-width:160px;"><label>Tipo</label><select class="prof-tipo"><option value="gratuita">Gratuita</option><option value="paga">Paga</option></select></div>
         <button type="button" class="btn-remove-prova" onclick="this.closest('.prof-entry').remove()" title="Remover">&times;</button>`;
     document.getElementById('profDatasContainer').appendChild(div);
@@ -1467,8 +1471,10 @@ async function salvarProficiencia() {
     const datas = [];
     document.querySelectorAll('#profDatasContainer .prof-entry').forEach((el, idx) => {
         const data = el.querySelector('.prof-data').value;
+        const inicio = el.querySelector('.prof-inicio').value;
+        const fim = el.querySelector('.prof-fim').value;
         const tipo = el.querySelector('.prof-tipo').value;
-        if (data) datas.push({ id: `${Date.now()}_${idx}`, data, tipoPagamento: tipo });
+        if (data) datas.push({ id: `${Date.now()}_${idx}`, data, horaInicio: inicio, horaFim: fim, tipoPagamento: tipo });
     });
     if (datas.length === 0) { showToast('Adicione pelo menos uma data.', true); return; }
     const arr = getProficiencias();
@@ -1491,9 +1497,10 @@ function renderProficiencias() {
     if (!container) return;
     if (profs.length === 0) { container.innerHTML = '<div class="empty-state"><p>Nenhuma prova de proficiência cadastrada</p></div>'; return; }
     container.innerHTML = profs.map(prof => {
-        const datasHtml = (prof.datas||[]).map(d =>
-            `<div class="prof-data-item"><span>${formatDate(parseDate(d.data))}</span><span class="badge" style="${d.tipoPagamento==='paga'?'background:#fff3e0;color:#e65100;':'background:#e8f5e9;color:#2e7d32;'}">${d.tipoPagamento==='paga'?'Paga':'Gratuita'}</span></div>`
-        ).join('');
+        const datasHtml = (prof.datas||[]).map(d => {
+            const horario = (d.horaInicio && d.horaFim) ? ` · ${d.horaInicio}–${d.horaFim}` : d.horaInicio ? ` · ${d.horaInicio}` : '';
+            return `<div class="prof-data-item"><span>${formatDate(parseDate(d.data))}${horario}</span><span class="badge" style="${d.tipoPagamento==='paga'?'background:#fff3e0;color:#e65100;':'background:#e8f5e9;color:#2e7d32;'}">${d.tipoPagamento==='paga'?'Paga':'Gratuita'}</span></div>`;
+        }).join('');
         return `<div class="prof-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><h3>${escapeHtml(prof.nome)}</h3><button class="btn btn-danger btn-sm" onclick="excluirProficiencia('${prof.id}')">Excluir</button></div>${datasHtml}</div>`;
     }).join('');
 }
