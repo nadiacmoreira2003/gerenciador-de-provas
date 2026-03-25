@@ -1675,7 +1675,7 @@ function gerarEmail(evento) {
             break;
         case 'envio_biblioteca': {
             const emailBib = getEmailBiblioteca();
-            assunto = `Solicitação de Cópias de Prova – ${disc} – ${evento.prova.nome}`;
+            assunto = `Solicitação de Impressão de Prova – ${disc} – ${evento.prova.nome}`;
             corpo = `Prezado(a),\n\nSolicito a impressão da prova conforme dados abaixo:\n\nDisciplina: ${disc}\nProfessor(a): ${prof}\nData da Prova: ${formatDate(parseDate(evento.prova.data))}\nNúmero de cópias: ${evento.prova.copias||30}\n\nSegue em anexo o arquivo da prova para impressão.\n\nAtenciosamente,\nCoordenação`;
             return { assunto, corpo, para: emailBib };
         }
